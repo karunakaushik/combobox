@@ -4,26 +4,28 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "./combo-box.module.css";
 interface ComboBoxProps {
-  options: string[];
-  onSelect: (value: string) => void;
+  options: any[];
+  itemOnClick: (value: string) => void;
+  label?: string;
+  placeholder?: string;
+  renderOption?: any;
+  value?: string;
+  handleInputChange?: any;
 }
 
-export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
-  const [query, setQuery] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
-  const [filteredOptions, setFilteredOptions] = useState<string[]>(options);
+export const ComboBox = ({
+  options,
+  itemOnClick,
+  label,
+  placeholder,
+  renderOption,
+  value,
+  handleInputChange,
+}: ComboBoxProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const filtered = options.filter((option) =>
-      option.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredOptions(filtered);
-    setHighlightedIndex(-1);
-  }, [query, options]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,7 +49,7 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
     switch (event.key) {
       case "ArrowDown":
         setHighlightedIndex((prevIndex) =>
-          Math.min(filteredOptions.length - 1, prevIndex + 1)
+          Math.min(options.length - 1, prevIndex + 1)
         );
         setIsDropdownOpen(true);
         break;
@@ -57,7 +59,8 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
         break;
       case "Enter":
         if (highlightedIndex >= 0) {
-          handleSelect(filteredOptions[highlightedIndex]);
+          itemOnClick(options[highlightedIndex]);
+          setIsDropdownOpen(false);
         }
         break;
       case "Escape":
@@ -68,35 +71,20 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
     }
   };
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value);
-    setSelectedOption(event.target.value);
-    setIsDropdownOpen(true);
-  };
-
-  const handleSelect = (value: string) => {
-    setQuery("");
-    setIsDropdownOpen(false);
-    onSelect(value);
-    setSelectedOption(value);
-  };
-
-  const handleOptionClick = (value: string) => {
-    handleSelect(value);
-  };
-
   return (
-    <div ref={dropdownRef} className={styles.outercombobox}>
-      <label className="text-red-500"> Option</label>
+    <div className={styles.outercombobox}>
+      {label && <label className="text-red-500"> {label}</label>}
       <div className={styles.combobox}>
         <input
           ref={inputRef}
           type="text"
-          value={selectedOption}
+          value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onClick={() => setIsDropdownOpen(true)}
-          placeholder="Search..."
+          onFocus={() => {
+            setIsDropdownOpen(true);
+          }}
+          placeholder={placeholder || "Search"}
           autoComplete="off"
           aria-autocomplete="list"
           aria-controls="dropdown"
@@ -104,9 +92,9 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
         />
         {isDropdownOpen && (
           <>
-            {filteredOptions.length > 0 ? (
-              <div className={styles.dropdown}>
-                {filteredOptions.map((option, index) => (
+            {options.length > 0 ? (
+              <div ref={dropdownRef} className={styles.dropdown}>
+                {options.map((option, index) => (
                   <div
                     key={option}
                     className={` ${
@@ -115,7 +103,8 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
                         : styles.option
                     }`}
                     onClick={() => {
-                      handleOptionClick(option);
+                      itemOnClick(option);
+                      setIsDropdownOpen(false);
                     }}
                     style={{
                       padding: "8px 10px",
@@ -124,7 +113,7 @@ export const ComboBox = ({ options, onSelect }: ComboBoxProps) => {
                         index === highlightedIndex ? "#b3d4fc" : "transparent",
                     }}
                   >
-                    {option}
+                    {renderOption ? renderOption(option) : `${option}`}
                   </div>
                 ))}
               </div>
