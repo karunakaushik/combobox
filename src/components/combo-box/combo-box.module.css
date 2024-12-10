@@ -25,11 +25,8 @@ input {
   background-color: white;
   z-index: 10;
   width: 100%;
-}
-
-.option {
-  padding: 8px 10px;
-  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.4rem;
 }
 
 .option:hover,

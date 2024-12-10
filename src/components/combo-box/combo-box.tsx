@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "./combo-box.module.css";
 interface ComboBoxProps {
-  options: any[];
+  autoCompleteList: any[];
   itemOnClick: (value: string) => void;
   label?: string;
   placeholder?: string;
@@ -14,7 +14,7 @@ interface ComboBoxProps {
 }
 
 export const ComboBox = ({
-  options,
+  autoCompleteList,
   itemOnClick,
   label,
   placeholder,
@@ -23,7 +23,7 @@ export const ComboBox = ({
   handleInputChange,
 }: ComboBoxProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +35,7 @@ export const ComboBox = ({
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setIsDropdownOpen(false);
+        setIsMenuOpen(false);
       }
     };
 
@@ -49,27 +49,42 @@ export const ComboBox = ({
     switch (event.key) {
       case "ArrowDown":
         setHighlightedIndex((prevIndex) =>
-          Math.min(options.length - 1, prevIndex + 1)
+          Math.min(autoCompleteList.length - 1, prevIndex + 1)
         );
-        setIsDropdownOpen(true);
+        setIsMenuOpen(true);
         break;
       case "ArrowUp":
         setHighlightedIndex((prevIndex) => Math.max(0, prevIndex - 1));
-        setIsDropdownOpen(true);
+        setIsMenuOpen(true);
         break;
       case "Enter":
         if (highlightedIndex >= 0) {
-          itemOnClick(options[highlightedIndex]);
-          setIsDropdownOpen(false);
+          itemOnClick(autoCompleteList[highlightedIndex]);
+          setIsMenuOpen(false);
+          inputRef.current?.blur();
         }
         break;
       case "Escape":
-        setIsDropdownOpen(false);
+        setIsMenuOpen(false);
         break;
       default:
         break;
     }
   };
+
+  useEffect(() => {
+    if (highlightedIndex >= 0 && dropdownRef.current) {
+      const highlightedOption = dropdownRef.current.children[
+        highlightedIndex
+      ] as HTMLElement;
+      if (highlightedOption) {
+        highlightedOption.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
+    }
+  }, [highlightedIndex]);
 
   return (
     <div className={styles.outercombobox}>
@@ -82,47 +97,42 @@ export const ComboBox = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => {
-            setIsDropdownOpen(true);
+            setIsMenuOpen(true);
           }}
           placeholder={placeholder || "Search"}
           autoComplete="off"
           aria-autocomplete="list"
           aria-controls="dropdown"
-          aria-expanded={isDropdownOpen}
+          aria-expanded={isMenuOpen}
         />
-        {isDropdownOpen && (
-          <>
-            {options.length > 0 ? (
-              <div ref={dropdownRef} className={styles.dropdown}>
-                {options.map((option, index) => (
-                  <div
-                    key={option}
-                    className={` ${
-                      index === highlightedIndex
-                        ? styles.highlighted
-                        : styles.option
-                    }`}
-                    onClick={() => {
-                      itemOnClick(option);
-                      setIsDropdownOpen(false);
-                    }}
-                    style={{
-                      padding: "8px 10px",
-                      cursor: "pointer",
-                      backgroundColor:
-                        index === highlightedIndex ? "#b3d4fc" : "transparent",
-                    }}
-                  >
-                    {renderOption ? renderOption(option) : `${option}`}
-                  </div>
-                ))}
-              </div>
+        {isMenuOpen && (
+          <div ref={dropdownRef} className={styles.dropdown}>
+            {autoCompleteList.length > 0 ? (
+              autoCompleteList.map((option, index) => (
+                <div
+                  key={option}
+                  className={` ${
+                    index === highlightedIndex && styles.highlighted
+                  }`}
+                  onClick={() => {
+                    itemOnClick(option);
+                    setIsMenuOpen(false);
+                  }}
+                  style={{
+                    padding: "2px 10px",
+                    cursor: "pointer",
+                    borderRadius: "4px",
+                    backgroundColor:
+                      index === highlightedIndex ? "#b3d4fc" : "transparent",
+                  }}
+                >
+                  {renderOption ? renderOption(option) : `${option}`}
+                </div>
+              ))
             ) : (
-              <div className={styles.dropdown}>
-                <div className={styles.option}>No results</div>
-              </div>
+              <div className={styles.option}>No results</div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

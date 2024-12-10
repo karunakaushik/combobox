@@ -17,6 +17,7 @@ const autoincompletes = [
 const App = () => {
   const [mutltselected, setMutltselected] = useState<any[]>([]);
   const [selectNew, setSelectNew] = useState("");
+  const [dropDownData, setDropDownData] = useState(dropdownData);
 
   const [selectedOption, setSelectedOption] = useState("");
   const [query, setQuery] = useState("");
@@ -32,7 +33,6 @@ const App = () => {
 
   const handleSelect = (selectedValue: string) => {
     setSelectedOption(selectedValue);
-    console.log("Selected value:", selectedValue);
   };
 
   const handleMultiSelect = (selectedValue: string) => {
@@ -41,6 +41,10 @@ const App = () => {
     } else {
       setMutltselected([selectedValue]);
     }
+
+    setDropDownData((prevData) =>
+      prevData.filter((item: any) => item?.value !== selectedValue?.value)
+    );
   };
 
   return (
@@ -49,7 +53,7 @@ const App = () => {
         <ComboBox
           value={selectedOption}
           label="Single Select"
-          options={filteredOptions}
+          autoCompleteList={filteredOptions}
           itemOnClick={handleSelect}
           placeholder={"Type here..."}
           handleInputChange={(e: any) => {
@@ -62,7 +66,7 @@ const App = () => {
           <ComboBox
             value={selectNew}
             label="Multi Select"
-            options={dropdownData}
+            autoCompleteList={dropDownData}
             renderOption={(item: any) => item?.label}
             itemOnClick={handleMultiSelect}
             handleInputChange={(e: any) => {
